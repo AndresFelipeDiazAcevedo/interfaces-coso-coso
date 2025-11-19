@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>UNAB - Horas Libres (Avance)</title>
+  <style>
+    :root{
+      --bg: #ffffff;
+      --text: #222;
+      --muted: #7b7b7b;
+      --primary: #cb1d11; /* color rojo de la unab */
+      --secondary: #8600dd;
+      --card: #fafafa;
+      --glass: rgba(255,255,255,0.6);
+      --radius: 12px;
+      --shadow: 0 6px 18px rgba(0,0,0,0.08);
+      font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color-scheme: light;
+    }
+    [data-theme="dark"]{
+      --bg: #0f1220;
+      --text: #ecf0f6;
+      --muted: #b8c0d6;
+      --card: #121425;
+      --glass: rgba(255,255,255,0.03);
+      --shadow: 0 8px 30px rgba(0,0,0,0.6);
+      color-scheme: dark;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: linear-gradient(180deg, var(--bg), var(--card));
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* Header */
+    header{
+      position:sticky;
+      top:0;
+      z-index:40;
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.25));
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding:10px 18px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    [data-theme="dark"] header{
+      background: linear-gradient(180deg, rgba(10,12,20,0.75), rgba(10,12,20,0.5));
+      border-bottom-color: rgba(255,255,255,0.04);
+    }
+
+    .logo{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo .mark{
+      width:56px;
+      height:56px;
+      background:var(--primary);
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      color:white;
+      font-weight:700;
+      box-shadow: var(--shadow);
+      font-family: "Poppins", sans-serif;
+    }
+    .logo .brand{
+      line-height:1;
+    }
+    .logo h1{margin:0;font-size:18px; font-weight:700; font-family:"Poppins",sans-serif; color:var(--text)}
+    .logo p{margin:0;font-size:12px;color:var(--muted)}
+
+    nav{
+      margin-left:18px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex:1;
+    }
+    nav a{
+      text-decoration:none;
+      color:var(--muted);
+      font-weight:600;
+      font-size:14px;
+      padding:8px 10px;
+      border-radius:8px;
+    }
+    nav a.active, nav a:hover{ color:var(--text); background:var(--glass) }
+
+    .header-right{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .clock{
+      text-align:right;
+      font-weight:700;
+      font-size:14px;
+    }
+    .date{
+      font-size:12px;
+      color:var(--muted)
+    }
+
+    .btn{
+      border:0;
+      background:var(--primary);
+      color:#111;
+      padding:8px 12px;
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+    .icon-btn{
+      display:inline-grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--card);border:1px solid rgba(0,0,0,0.04);
+    }
+
+    /* Main container */
+    .container{max-width:1200px;margin:18px auto;padding:0 18px; width:100%;}
+    .grid{display:grid;grid-template-columns: 1fr 340px; gap:18px; align-items:start}
+    @media(max-width:980px){ .grid{grid-template-columns: 1fr} header nav{display:none} .logo h1{font-size:16px} }
+
+    /* Hero / main card */
+    .hero{
+      background: linear-gradient(180deg, var(--card), rgba(0,0,0,0.02));
+      padding:18px;border-radius:14px; box-shadow:var(--shadow);
+      display:flex; gap:16px; align-items:center;
+    }
+    .hero .left{flex:1}
+    .hero h2{margin:0;font-size:20px;font-weight:800;font-family:"Poppins",sans-serif}
+    .hero p{margin:6px 0 14px;color:var(--muted)}
+
+    .progress-bar{
+      height:14px;background:rgba(0,0,0,0.06);border-radius:12px;overflow:hidden;
+    }
+    .progress-bar > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:12px}
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .small{font-size:13px;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid rgba(0,0,0,0.04)}
+
+    /* Right column widgets */
+    .card{background:var(--card); padding:14px;border-radius:12px; box-shadow:var(--shadow)}
+    .card h3{margin:0 0 10px 0;font-size:16px}
+    .welcome{display:flex;gap:12px;align-items:center}
+
+    /* Events */
+    .events{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+    @media(max-width:600px){ .events{grid-template-columns:1fr} }
+
+    .event{
+      background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
+      padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.04)
+    }
+    .event h4{margin:0;font-size:14px}
+    .event small{color:var(--muted)}
+
+    /* Places */
+    .places{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    @media(max-width:600px){ .places{grid-template-columns:1fr} }
+    .place{
+      cursor:pointer;
+      border-radius:10px; overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(0,0,0,0.01));
+      display:flex; gap:12px; padding:12px; align-items:center; border:1px solid rgba(0,0,0,0.06);
+      transition:transform .12s, box-shadow .12s;
+    }
+    .place:hover{ transform:translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.06) }
+    .place img{width:72px;height:56px;object-fit:cover;border-radius:8px}
+    .place h5{margin:0;font-size:14px}
+    .place .meta{color:var(--muted);font-size:13px;margin-top:6px}
+
+    /* small utilities */
+    .tiny{font-size:12px;color:var(--muted)}
+    .chip{display:inline-block;padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,var(--primary),var(--secondary));color:#111;font-weight:700;font-size:13px}
+
+    /* Modal (reservas) */
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:1000;
+    }
+    .modal{
+      width:720px;max-width:94%;background:var(--card);border-radius:12px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.5);position:relative;
+    }
+    .modal h3{margin:0 0 12px 0}
+    .times-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+    .time-slot{
+      padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);background:transparent;text-align:center;cursor:pointer;
+    }
+    .time-slot.active{background:var(--primary);color:#fff;border-color:transparent}
+    .modal .modal-row{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px}
+    .modal .notice{background:#f4f4f4;padding:8px;border-radius:8px;color:#333;margin-top:8px}
+
+    /* volver arriba */
+    #backTop{position:fixed;right:18px;bottom:18px;display:none;width:46px;height:46px;border-radius:10px;background:var(--primary);color:#111;align-items:center;justify-content:center;font-weight:800;cursor:pointer;z-index:60}
+
+    /* Footer */
+    footer{margin-top:18px;padding:18px;background:transparent;border-top:1px dashed rgba(0,0,0,0.04);text-align:center;color:var(--muted)}
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo" role="banner">
+      <div class="mark" aria-hidden="true">UNAB</div>
+      <div class="brand">
+        <h1>Universidad UNAB</h1>
+        <p class="tiny">Portal Horas Libres - Avance</p>
+      </div>
+    </div>
+
+    <nav role="navigation" aria-label="Principal">
+      <a href="#inicio" class="active">Inicio</a>
+      <a href="#horas">Horas</a>
+      <a href="#lugares">Lugares</a>
+      <a href="#eventos">Eventos</a>
+      <a href="#perfil">Perfil</a>
+      <a href="#ayuda">Ayuda</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="clock" aria-live="polite">
+        <div id="time">--:--</div>
+        <div class="date" id="date">--</div>
+      </div>
+
+      <button class="icon-btn" id="themeToggle" title="Alternar modo">☼</button>
+      <button class="btn" id="loginBtn">Iniciar sesión</button>
+    </div>
+  </header>
+
+  <main class="container" id="inicio">
+    <div class="grid">
+      <!-- MAIN -->
+      <div>
+        <div class="hero card">
+          <div class="left">
+            <div class="page-title">
+              <h2 id="welcomeTitle">¡Bienvenido!</h2>
+              <span class="chip" id="msg-hours">Horas libres: 0/40</span>
+            </div>
+            <p id="heroSub">Visualiza tus horas libres, encuentra espacios disponibles y organiza tu tiempo fácilmente.</p>
+
+            <div class="tiny muted">Progreso de Horas</div>
+            <div class="progress-bar" aria-hidden="true" style="margin:8px 0 12px">
+              <i id="progressFill" style="width:0%"></i>
+            </div>
+
+        <!-- si se quita como que se desorganiza todo ent esto es como si existiese pero a la vez no, es por el orden nomas-->
+            <div class="actions">
+              <button class="small" id="addHour"></button>
+              <button class="small" id="removeHour"></button>
+              <button class="small" onclick="location.href='#lugares'"></button>
+            </div>
+          </div>
+
+          <aside style="width:260px">
+            <div class="card">
+              <h3>Frase del día</h3>
+              <p id="quote" class="tiny">Cargando...</p>
+            </div>
+
+            <div style="height:10px"></div>
+
+            <div class="card">
+              <h3>Datos rápidos</h3>
+              <p class="tiny">Usuario: <strong id="userName">Invitado</strong></p>
+              <p class="tiny">Horas completadas: <strong id="userHours">0</strong></p>
+            </div>
+          </aside>
+        </div>
+
+        <section id="lugares" aria-labelledby="lugaresTitle">
+          <div class="page-title">
+            <h3 id="lugaresTitle">Lugares del campus</h3>
+          </div>
+
+          <div class="card large">
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+              <div class="search" style="flex:1">
+                <input id="placeSearch" placeholder="Buscar lugares (ej. biblioteca, gimnasio)" />
+                <button class="small" id="clearSearch">Limpiar</button>
+              </div>
+              <div class="tiny muted">Filtra por nombre</div>
+            </div>
+
+            <div class="places" id="placesGrid">
+              <div class="place" data-name="Biblioteca" data-desc="Zona A - 1er piso" data-image="images/biblioteca.jpg">
+                <img src="images/biblioteca.jpg" alt="Biblioteca">
+                <div>
+                  <h5>Biblioteca </h5>
+                  <div class="meta">Zona A - 1er piso</div>
+                </div>
+              </div>
+
+              <div class="place" data-name="Gimnasio " data-desc="Capacidad: 40" data-image="images/gimansio.jpg">
+                <img src="images/gimansio.jpg" alt="Gimnasio">
+                <div>
+                  <h5>Gimnasio </h5>
+                  <div class="meta">Capacidad: 40</div>
+                </div>
+              </div>
+
+              <div class="place" data-name="Cafetería - Banu" data-desc="Horario: 7:00 - 18:00" data-image="images/banu.jpg">
+                <img src="images/banu.jpg" alt="Cafeteria">
+                <div>
+                  <h5>Cafetería - Banu</h5>
+                  <div class="meta">Horario: 7:00 - 18:00</div>
+                </div>
+              </div>
+
+              <div class="place" data-name="Sala de estudio - Biblioteca" data-desc="Reservas disponibles" data-image="images/salas de estudio.jpg">
+                <img src="images/salas de estudio.jpg" alt="Sala de estudio">
+                <div>
+                  <h5>Sala de estudio - Biblioteca</h5>
+                  <div class="meta">Reservas disponibles</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Eventos -->
+        <section id="eventos" aria-labelledby="eventosTitle">
+          <div class="page-title">
+            <h3 id="eventosTitle">Eventos próximos</h3>
+          </div>
+
+          <div class="card large">
+            <div class="events" id="eventsList">
+              <div class="event">
+                <h4>Torneo Interfacultades</h4>
+                <small class="muted">Fecha: 2026-03-12 • Lugar: Coliseo Csu</small>
+                <p class="tiny">Equipos, inscripciones y más</p>
+              </div>
+
+              <div class="event">
+                <h4>Charla: IA y Educación</h4>
+                <small class="muted">Fecha: 2026-04-27 • Lugar: Auditorio</small>
+                <p class="tiny">Conferencista invitado y cupos limitados</p>
+              </div>
+
+              <div class="event">
+                <h4>Taller de emprendimiento</h4>
+                <small class="muted">Fecha: 2025-04-10 • Lugar: Primer piso edifico L</small>
+                <p class="tiny">Bootcamp de 3 horas, inscripción previa</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Resto de secciones  -->
+        <section id="horas">
+         <div class="page-title"><h3>Horas Libres (Registro)</h3></div>
+
+        <div class="card large">
+        <!-- Formulario -->
+      <div style="margin-bottom: 15px;">
+      <label><strong>Horas realizadas:</strong></label>
+      <input id="inputHoras" type="number" min="1" max="5" placeholder="Ej: 2" style="width:100%;padding:8px;margin-top:5px">
+
+      <label style="margin-top:10px;display:block;"><strong>Motivo:</strong></label>
+      <input id="inputMotivo" type="text" placeholder="Ej: Conferencia semanda de la Ingeniería" style="width:100%;padding:8px;margin-top:5px">
+
+      <button id="btnAgregarRegistro" class="small" style="margin-top:12px;background:#cb1d11;color:white;">
+        Registrar horas
+      </button>
+    </div>
+
+    <hr>
+
+        <!-- Tabla -->
+        <h4>Historial de horas</h4>
+        <table id="tablaHoras" style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr style="border-bottom:1px solid #ddd;">
+              <th style="padding:8px;text-align:left;">Fecha</th>
+              <th style="padding:8px;text-align:left;">Horas</th>
+              <th style="padding:8px;text-align:left;">Motivo</th>
+           </tr>
+          </thead>
+          <tbody id="tbodyHoras"></tbody>
+          </table>
+          </div>
+          </section>
+
+
+        <section id="perfil">
+          <div class="page-title"><h3>Perfil de Estudiante</h3></div>
+          <div class="card large">
+            <p class="tiny">Nombre: <strong id="profileName">Invitado</strong></p>
+            <p class="tiny">Programa: Ingeniería de Sistemas (ejemplo)</p>
+            <p class="tiny">ID Estudiante: 000000</p>
+          </div>
+        </section>
+
+        <footer>
+          UNAB • Proyecto Horas Libres - Avance | Diseño y prototipo - 2024
+        </footer>
+      </div>
+
+      <!-- columna de la derecha -->
+      <aside>
+        <div class="card">
+          <h3>Mi Perfil</h3>
+          <div class="welcome">
+            <div style="width:56px;height:56px;border-radius:10px;background:var(--primary);display:grid;place-items:center;color:#111;font-weight:800">A</div>
+            <div>
+              <div style="font-weight:700" id="sideName">Invitado</div>
+              <div class="tiny muted">Programa: Ingeniería (ej.)</div>
+            </div>
+          </div>
+
+          <hr style="margin:12px 0;border:none;border-top:1px solid rgba(0,0,0,0.04)">
+
+          <h3 style="margin-top:6px">Hora actual</h3>
+          <div class="tiny muted" id="sideTime">--:--</div>
+
+          <div style="height:12px"></div>
+
+          <h3>Eventos rápidos</h3>
+          <ul style="padding-left:14px;margin:8px 0;color:var(--muted);">
+            <li>Inscripción torneo</li>
+            <li>Charla IA</li>
+          </ul>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <h3>Buscar lugar</h3>
+          <input id="miniSearch" placeholder="Buscar..." style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+          <div style="height:10px"></div>
+          <div class="tiny muted">Otras acciones</div>
+          <div style="height:8px"></div>
+          <button class="small" id="openProfile">Ver perfil</button>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <h3>Configuración</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="small" id="themeBtn2">Tema</button>
+            <button class="small" id="greetBtn">Cambiar usuario</button>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Modal backdrop -->
+  <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 id="modalTitle">Reservar lugar</h3>
+        <button id="closeModal" title="Cerrar" style="background:transparent;border:0;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center;margin-top:8px;">
+        <img id="modalImage" src="" alt="" style="width:120px;height:80px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+        <div>
+          <div id="modalPlaceName" style="font-weight:700;font-size:16px;"></div>
+          <div id="modalPlaceDesc" class="tiny" style="margin-top:6px;"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <strong>Hora:</strong>
+        <div class="times-grid" id="timesGrid">
+          <!-- tiempos se agregan por JS -->
+        </div>
+
+        <div class="notice" style="margin-top:8px">
+          Selecciona un horario y presiona <strong>Reservar</strong> para confirmar.
+        </div>
+
+        <div class="modal-row">
+          <button id="cancelReserve" class="small" style="background:#eee;color:#222;border-radius:8px;padding:8px 12px;border:1px solid rgba(0,0,0,0.06)">Cancelar</button>
+          <button id="confirmReserve" class="btn">Reservar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PRE-INSCRIPCIÓN -->
+<div id="modalPre" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+">
+    <div style="
+        width: 350px;
+        background: var(--card);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+    ">
+        <h3 style="margin-top:0;">Pre-inscripción</h3>
+
+        <label><strong>Correo:</strong></label>
+        <input id="preEmail" type="email" placeholder="ejemplo@correo.com"
+            style="width:100%;margin:5px 0 12px;padding:8px;border-radius:8px;border:1px solid #ccc;">
+
+        <label><strong>ID Estudiante:</strong></label>
+        <input id="preID" type="text" placeholder="Ingresa tu ID"
+            style="width:100%;margin:5px 0 12px;padding:8px;border-radius:8px;border:1px solid #ccc;">
+
+        <div style="display:flex;justify-content:space-between;margin-top:15px;">
+            <button id="btnCancelarPre" style="padding:8px 14px;border:none;border-radius:8px;background:#ccc;cursor:pointer;">
+                Cancelar
+            </button>
+
+            <button id="btnEnviarPre" style="padding:8px 14px;border:none;border-radius:8px;background:var(--primary);color:white;cursor:pointer;">
+                Enviar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL AYUDA -->
+<div id="modalAyuda" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+">
+    <div style="
+        width: 380px;
+        background: var(--card);
+        padding: 22px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+    ">
+        <h3 style="margin-top:0;">Centro de Ayuda</h3>
+
+        <label><strong>¿Qué ayuda podemos proporcionarte?</strong></label>
+        <textarea id="ayudaMensaje" rows="4" placeholder="Escribe aquí tu solicitud..."
+            style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid #ccc;resize:none;"></textarea>
+
+        <div style="display:flex;justify-content:space-between;margin-top:18px;">
+            <button id="cancelAyuda" style="padding:8px 14px;border:none;border-radius:8px;background:#ccc;cursor:pointer;">
+                Cancelar
+            </button>
+
+            <button id="enviarAyuda" style="padding:8px 14px;border:none;border-radius:8px;background:var(--primary);color:white;cursor:pointer;">
+                Enviar
+            </button>
+        </div>
+    </div>
+</div>
+
+
+  <div id="backTop" title="Volver arriba">▲</div>
+
+  <script>
+  // elementos de ui (comprobamos existencia)
+  const timeEl = document.getElementById('time');
+  const dateEl = document.getElementById('date');
+  const sideTime = document.getElementById('sideTime');
+  const progressFill = document.getElementById('progressFill');
+  const userNameEl = document.getElementById('userName');
+  const profileName = document.getElementById('profileName');
+  const sideName = document.getElementById('sideName');
+  const msgHours = document.getElementById('msg-hours');
+  const userHoursEl = document.getElementById('userHours');
+
+  // DATOS SIMULADOS EN MEMORIA (SIN localStorage)
+  let data = {
+    user: { name: null, hours: 0, needed: 40 },
+    registros: []
+  };
+
+  // Reloj
+  function tick(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    if (timeEl) timeEl.textContent = hh + ":" + mm;
+    if (sideTime) sideTime.textContent = hh + ":" + mm + ":" + ss;
+    if (dateEl) {
+      const opt = { weekday:'short', year:'numeric', month:'short', day:'numeric' };
+      dateEl.textContent = now.toLocaleDateString('es-CO', opt);
+    }
+  }
+  setInterval(tick, 1000);
+  tick();
+
+  // Theme (sin persistencia)
+  const themeToggle = document.getElementById('themeToggle');
+  const themeBtn2 = document.getElementById('themeBtn2');
+  function setTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    if (themeToggle) themeToggle.textContent = t === 'dark' ? '☾' : '☼';
+  }
+  // iniciar según preferencia del sistema (no guardamos)
+  const initialTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  setTheme(initialTheme);
+  if (themeToggle) themeToggle.addEventListener('click', ()=> {
+    setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+  if (themeBtn2) themeBtn2.addEventListener('click', ()=> { if (themeToggle) themeToggle.click(); });
+
+  // Update UI (sin guardar)
+  function updateUI(){
+    const name = data.user.name || 'Invitado';
+    if (userNameEl) userNameEl.textContent = name;
+    if (profileName) profileName.textContent = name;
+    if (sideName) sideName.textContent = name[0] ? name[0].toUpperCase() : 'U';
+    if (userHoursEl) userHoursEl.textContent = data.user.hours;
+    if (msgHours) msgHours.textContent = `Horas libres: ${data.user.hours}/${data.user.needed}`;
+    const pct = Math.min(100, Math.round((data.user.hours / data.user.needed) * 100));
+    if (progressFill) progressFill.style.width = pct + '%';
+    const welcomeTitle = document.getElementById('welcomeTitle');
+    if (welcomeTitle) welcomeTitle.textContent = data.user.name ? `¡Hola, ${data.user.name}!` : '¡Bienvenido!';
+  }
+
+  // proceso de login simulado (si existe el botón)
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', ()=>{
+      const n = prompt('Escribe tu nombre (simulado):', data.user.name || '');
+      if (n !== null){ data.user.name = n.trim() || 'Invitado'; updateUI(); }
+    });
+  }
+  const greetBtn = document.getElementById('greetBtn');
+  if (greetBtn) greetBtn.addEventListener('click', ()=> { if (loginBtn) loginBtn.click(); });
+
+  // Inicializar UI
+  if(!data.user.name) data.user.name = null;
+  updateUI();
+
+  // frase del dia
+  const quotes = [
+    "Aprovecha tus horas libres para aprender algo nuevo.",
+    "Organiza hoy lo que agradecerás mañana.",
+    "Pequeños pasos diarios, grandes resultados anuales.",
+    "La disciplina convierte metas en hábitos.",
+    "Comparte conocimiento: crea comunidad."
+  ];
+  const quoteEl = document.getElementById('quote');
+  if (quoteEl) quoteEl.textContent = quotes[Math.floor(Math.random()*quotes.length)];
+
+  // filtrado de lugares
+  const placeSearch = document.getElementById('placeSearch');
+  const placesGrid = document.getElementById('placesGrid');
+  const clearSearch = document.getElementById('clearSearch');
+  if (placeSearch && placesGrid) {
+    placeSearch.addEventListener('input', ()=> filterPlaces(placeSearch.value));
+  }
+  if (clearSearch) clearSearch.addEventListener('click', ()=> { if (placeSearch) { placeSearch.value=''; filterPlaces(''); }});
+
+  function filterPlaces(q){
+    if (!placesGrid) return;
+    q = (q||'').trim().toLowerCase();
+    const items = placesGrid.querySelectorAll('.place');
+    items.forEach(it=>{
+      const name = it.getAttribute('data-name')?.toLowerCase() || '';
+      it.style.display = name.indexOf(q) !== -1 ? 'flex' : 'none';
+    });
+  }
+
+  // barra de busqueda mini
+  const miniSearch = document.getElementById('miniSearch');
+  if (miniSearch && placesGrid) {
+    miniSearch.addEventListener('input', (e)=>{
+      const q = e.target.value.trim().toLowerCase();
+      if(!q) return;
+      const items = placesGrid.querySelectorAll('.place');
+      for(const it of items){
+        if(it.getAttribute('data-name').toLowerCase().includes(q)){
+          it.scrollIntoView({behavior:'smooth',block:'center'});
+          it.style.border = '2px solid var(--primary)';
+          setTimeout(()=> it.style.border = '1px solid rgba(0,0,0,0.06)', 2500);
+          break;
+        }
+      }
+    });
+  }
+
+  //  reserva modal (si existen elementos)
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalPlaceName = document.getElementById('modalPlaceName');
+  const modalPlaceDesc = document.getElementById('modalPlaceDesc');
+  const modalImage = document.getElementById('modalImage');
+  const timesGrid = document.getElementById('timesGrid');
+  const closeModalBtn = document.getElementById('closeModal');
+  const cancelReserve = document.getElementById('cancelReserve');
+  const confirmReserve = document.getElementById('confirmReserve');
+
+  let selectedSlot = null;
+  let currentPlace = null;
+
+  // Generar slots: 06:00 AM a 06:00 PM por horas (si existe timesGrid)
+  const generateSlots = ()=>{
+    if (!timesGrid) return;
+    timesGrid.innerHTML = '';
+    const startHour = 6;
+    const endHour = 18; // inclusive
+    for(let h=startHour; h<=endHour; h++){
+      const date = new Date();
+      date.setHours(h,0,0,0);
+      const label = date.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+      const slot = document.createElement('div');
+      slot.className = 'time-slot';
+      slot.tabIndex = 0;
+      slot.textContent = label;
+      slot.dataset.hour = h;
+      slot.addEventListener('click', ()=> {
+        timesGrid.querySelectorAll('.time-slot').forEach(x=>x.classList.remove('active'));
+        slot.classList.add('active');
+        selectedSlot = { hour: h, label };
+      });
+      timesGrid.appendChild(slot);
+    }
+  };
+
+  // Abrir modal con datos del lugar
+  const openModalForPlace = (placeEl)=>{
+    if (!modalBackdrop) return;
+    currentPlace = {
+      name: placeEl.dataset.name || 'Lugar',
+      desc: placeEl.dataset.desc || '',
+      image: placeEl.dataset.image || ''
+    };
+    if (modalPlaceName) modalPlaceName.textContent = currentPlace.name;
+    if (modalPlaceDesc) modalPlaceDesc.textContent = currentPlace.desc;
+    if (modalImage) modalImage.src = currentPlace.image;
+    selectedSlot = null;
+    if (timesGrid) timesGrid.querySelectorAll('.time-slot')?.forEach(x=>x.classList.remove('active'));
+    modalBackdrop.style.display = 'flex';
+    modalBackdrop.setAttribute('aria-hidden','false');
+  };
+
+  // Close modal
+  const closeModal = ()=>{
+    if (!modalBackdrop) return;
+    modalBackdrop.style.display = 'none';
+    modalBackdrop.setAttribute('aria-hidden','true');
+    selectedSlot = null;
+  };
+
+  // Attach click on each place (si existe placesGrid)
+  if (placesGrid) {
+    placesGrid.querySelectorAll('.place').forEach(place=>{
+      place.addEventListener('click', ()=> openModalForPlace(place));
+      place.addEventListener('keydown', (e)=> { if(e.key === 'Enter' || e.key === ' ') openModalForPlace(place); });
+    });
+  }
+
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  if (cancelReserve) cancelReserve.addEventListener('click', closeModal);
+
+  // boton de reserva
+  if (confirmReserve) {
+    confirmReserve.addEventListener('click', ()=>{
+      if(!selectedSlot){
+        alert('Selecciona primero una franja horaria.');
+        return;
+      }
+      alert(`Reserva confirmada:\nLugar: ${currentPlace?.name || 'Lugar'}\nHora: ${selectedSlot.label}`);
+      closeModal();
+    });
+  }
+
+  // cerrar modal si clickeas fuera
+  if (modalBackdrop) {
+    modalBackdrop.addEventListener('click', (e)=>{
+      if(e.target === modalBackdrop) closeModal();
+    });
+  }
+
+  generateSlots();
+
+  // back to top
+  const backTop = document.getElementById('backTop');
+  if (backTop) {
+    window.addEventListener('scroll', ()=> {
+      backTop.style.display = window.scrollY > 300 ? 'grid' : 'none';
+    });
+    backTop.addEventListener('click', ()=> window.scrollTo({top:0,behavior:'smooth'}));
+  }
+
+  // nav links active state
+  document.querySelectorAll('nav a').forEach(a=>{
+    a.addEventListener('click', (ev)=>{
+      document.querySelectorAll('nav a').forEach(x=>x.classList.remove('active'));
+      ev.currentTarget.classList.add('active');
+    });
+  });
+
+  // Keyboard accessibility: close modal with Esc
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && modalBackdrop && modalBackdrop.style.display === 'flex') closeModal();
+  });
+
+  // tabla de horas libres (referencias si existen)
+  const inputHoras = document.getElementById('inputHoras');
+  const inputMotivo = document.getElementById('inputMotivo');
+  const btnAgregarRegistro = document.getElementById('btnAgregarRegistro');
+  const tbodyHoras = document.getElementById('tbodyHoras');
+
+  // Renderizar tabla al iniciar
+  function renderTabla() {
+    if (!tbodyHoras) return;
+    tbodyHoras.innerHTML = "";
+    data.registros.forEach((r, idx) => {
+      const row = document.createElement("tr");
+      // añadimos un botón eliminar por si quieres
+      row.innerHTML = `
+        <td style="padding:8px;border-bottom:1px solid #eee;">${r.fecha}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${r.horas}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${r.motivo}</td>
+      `;
+      tbodyHoras.appendChild(row);
+    });
+  }
+
+  renderTabla();
+
+  if (btnAgregarRegistro) {
+    btnAgregarRegistro.addEventListener('click', () => {
+      const horas = parseInt(inputHoras?.value);
+      const motivo = inputMotivo?.value.trim() || "";
+      const fecha = new Date().toLocaleDateString("es-CO");
+
+      if (!horas || horas <= 0) {
+          alert("Debes ingresar un número válido de horas.");
+          return;
+      }
+
+      if (motivo === "") {
+          alert("Debes indicar el motivo.");
+          return;
+      }
+
+      // Guardar en el historial (memoria)
+      data.registros.push({ fecha, horas, motivo });
+
+      // Sumar horas al total general (simulación)
+      data.user.hours = Math.min(data.user.needed, data.user.hours + horas);
+
+      // Actualizar UI general
+      updateUI();
+      renderTabla();
+
+      // Reset form
+      if (inputHoras) inputHoras.value = "";
+      if (inputMotivo) inputMotivo.value = "";
+    });
+  }
+
+  // preinscripcion (si existe modal)
+  const modalPre = document.getElementById("modalPre");
+  const btnCancelarPre = document.getElementById("btnCancelarPre");
+  const btnEnviarPre = document.getElementById("btnEnviarPre");
+  const inputCorreo = document.getElementById("preEmail");
+  const inputID = document.getElementById("preID");
+
+  if (document.querySelectorAll) {
+    document.querySelectorAll(".event").forEach(ev => {
+      ev.style.cursor = "pointer";
+      ev.addEventListener("click", () => {
+        if (modalPre) modalPre.style.display = "flex";
+      });
+    });
+  }
+
+  if (btnCancelarPre) btnCancelarPre.addEventListener("click", () => {
+    if (modalPre) modalPre.style.display = "none";
+    if (inputCorreo) inputCorreo.value = "";
+    if (inputID) inputID.value = "";
+  });
+
+  if (btnEnviarPre) btnEnviarPre.addEventListener("click", () => {
+    const correo = inputCorreo?.value.trim() || "";
+    const id = inputID?.value.trim() || "";
+
+    if (correo === "" || id === "") {
+      alert("Debes llenar ambos campos.");
+      return;
+    }
+
+    alert(`Pre-inscripción enviada:\nCorreo: ${correo}\nID: ${id}`);
+
+    if (modalPre) modalPre.style.display = "none";
+    if (inputCorreo) inputCorreo.value = "";
+    if (inputID) inputID.value = "";
+  });
+
+  // abrir perfil (si existe botón)
+  const openProfileBtn = document.getElementById("openProfile");
+  if (openProfileBtn) {
+    openProfileBtn.addEventListener("click", () => {
+      const perfil = document.getElementById("perfil");
+      if (perfil) {
+        perfil.scrollIntoView({ behavior: "smooth" });
+        // marcar nav
+        document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+        const perfilLink = document.querySelector('nav a[href="#perfil"]');
+        if (perfilLink) perfilLink.classList.add('active');
+      }
+    });
+  }
+
+  // AYUDA modal
+  const abrirAyuda = document.querySelector('a[href="#ayuda"]');
+  const modalAyuda = document.getElementById("modalAyuda");
+  const cancelarAyuda = document.getElementById("cancelAyuda");
+  const enviarAyuda = document.getElementById("enviarAyuda");
+  const ayudaMensaje = document.getElementById("ayudaMensaje");
+
+  if (abrirAyuda && modalAyuda) {
+    abrirAyuda.addEventListener("click", (e) => {
+      e.preventDefault();
+      modalAyuda.style.display = "flex";
+    });
+  }
+
+  if (cancelarAyuda) cancelarAyuda.addEventListener("click", () => {
+    if (modalAyuda) modalAyuda.style.display = "none";
+    if (ayudaMensaje) ayudaMensaje.value = "";
+  });
+
+  if (enviarAyuda) enviarAyuda.addEventListener("click", () => {
+    const txt = (ayudaMensaje?.value || "").trim();
+    if (txt === "") {
+      alert("Por favor escribe tu solicitud.");
+      return;
+    }
+    alert("Responderemos lo más pronto posible. ¡Gracias por tu paciencia!");
+    if (modalAyuda) modalAyuda.style.display = "none";
+    if (ayudaMensaje) ayudaMensaje.value = "";
+  });
+
+  if (modalAyuda) {
+    modalAyuda.addEventListener("click", (e) => {
+      if (e.target === modalAyuda) {
+        modalAyuda.style.display = "none";
+        if (ayudaMensaje) ayudaMensaje.value = "";
+      }
+    });
+  }
+
+</script>
+
+</body>
+</html>
