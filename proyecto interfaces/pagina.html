@@ -585,7 +585,7 @@
   const msgHours = document.getElementById('msg-hours');
   const userHoursEl = document.getElementById('userHours');
 
-  // DATOS SIMULADOS EN MEMORIA (SIN localStorage)
+  // DATOS SIMULADOS 
   let data = {
     user: { name: null, hours: 0, needed: 40 },
     registros: []
@@ -607,14 +607,14 @@
   setInterval(tick, 1000);
   tick();
 
-  // Theme (sin persistencia)
+  // Theme 
   const themeToggle = document.getElementById('themeToggle');
   const themeBtn2 = document.getElementById('themeBtn2');
   function setTheme(t){
     document.documentElement.setAttribute('data-theme', t);
     if (themeToggle) themeToggle.textContent = t === 'dark' ? '☾' : '☼';
   }
-  // iniciar según preferencia del sistema (no guardamos)
+  // iniciar según preferencia del sistema 
   const initialTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   setTheme(initialTheme);
   if (themeToggle) themeToggle.addEventListener('click', ()=> {
@@ -622,7 +622,7 @@
   });
   if (themeBtn2) themeBtn2.addEventListener('click', ()=> { if (themeToggle) themeToggle.click(); });
 
-  // Update UI (sin guardar)
+  // Update UI 
   function updateUI(){
     const name = data.user.name || 'Invitado';
     if (userNameEl) userNameEl.textContent = name;
@@ -636,7 +636,7 @@
     if (welcomeTitle) welcomeTitle.textContent = data.user.name ? `¡Hola, ${data.user.name}!` : '¡Bienvenido!';
   }
 
-  // proceso de login simulado (si existe el botón)
+  // proceso de login simulado 
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', ()=>{
@@ -712,7 +712,7 @@
   let selectedSlot = null;
   let currentPlace = null;
 
-  // Generar slots: 06:00 AM a 06:00 PM por horas (si existe timesGrid)
+  // Generar slots: 06:00 AM a 06:00 PM por horas 
   const generateSlots = ()=>{
     if (!timesGrid) return;
     timesGrid.innerHTML = '';
